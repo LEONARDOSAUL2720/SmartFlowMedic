@@ -1,0 +1,67 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const morgan = require('morgan');
+const connectDB = require('./config/database');
+const config = require('./config/env');
+
+// Importar rutas
+const webRoutes = require('./modules/web/routes');
+const mobileRoutes = require('./modules/mobile/routes');
+
+const app = express();
+
+// Conectar a la base de datos
+connectDB();
+
+// Middlewares globales
+app.use(cors({ origin: config.corsOrigin }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Logger solo en desarrollo
+if (config.nodeEnv === 'development') {
+  app.use(morgan('dev'));
+}
+
+// Ruta de prueba
+app.get('/', (req, res) => {
+  res.json({
+    message: 'VITA Backend API',
+    version: '1.0.0',
+    endpoints: {
+      web: '/api/web',
+      mobile: '/api/mobile'
+    }
+  });
+});
+
+// Rutas principales
+app.use('/api/web', webRoutes);
+app.use('/api/mobile', mobileRoutes);
+
+// Manejo de rutas no encontradas
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Endpoint no encontrado'
+  });
+});
+
+// Manejo de errores global
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Error interno del servidor',
+    ...(config.nodeEnv === 'development' && { stack: err.stack })
+  });
+});
+
+// Iniciar servidor
+const PORT = config.port;
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT} en modo ${config.nodeEnv}`);
+});
+
+module.exports = app;
