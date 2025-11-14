@@ -27,113 +27,157 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:background="@color/white"
             android:padding="24dp">
 
             <!-- Logo / espacio para icono -->
             <ImageView
                 android:id="@+id/logo"
-                android:layout_width="84dp"
-                android:layout_height="84dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:layout_gravity="center"
-                android:src="@mipmap/ic_launcher_round"
-                android:contentDescription="Logo"
-                android:scaleType="centerCrop"
-                android:backgroundTint="@color/colorPrimary"
-                android:padding="8dp" />
+                android:src="@drawable/icon_smart_flow"
+                android:contentDescription="Logo SmartFlow"
+                android:padding="16dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="SmartFlow"
-                android:textColor="@color/textPrimary"
-                android:textSize="20sp"
+                android:textColor="@color/colorPrimary"
+                android:textSize="28sp"
                 android:textStyle="bold"
                 android:gravity="center"
-                android:layout_marginTop="12dp" />
+                android:layout_marginTop="8dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Inicia sesión o regístrate para gestionar tus consultas"
-                android:textColor="@color/textPrimary"
-                android:textSize="14sp"
+                android:text="Tu salud en buenas manos"
+                android:textColor="@color/colorSecondary"
+                android:textSize="15sp"
                 android:gravity="center"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="24dp" />
 
-            <!-- Campos -->
-
-            <EditText
-                android:id="@+id/et_email"
+            <!-- Campos con Material Design -->
+            <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                android:background="@android:drawable/edit_text"
-                android:drawableStart="@mipmap/ic_launcher"
+                android:layout_height="wrap_content"
                 android:hint="Correo electrónico"
-                android:inputType="textEmailAddress"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:textColor="@color/textPrimary" />
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                app:boxStrokeColor="@color/colorPrimary"
+                app:hintTextColor="@color/colorPrimary"
+                app:startIconDrawable="@android:drawable/ic_dialog_email"
+                app:startIconTint="@color/colorPrimary"
+                android:textColorHint="@color/textPrimary"
+                android:layout_marginBottom="12dp">
 
-            <EditText
-                android:id="@+id/et_password"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
                 android:hint="Contraseña"
-                android:inputType="textPassword"
-                android:drawableStart="@mipmap/ic_launcher"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:background="@android:drawable/edit_text"
-                android:textColor="@color/textPrimary"
-                android:layout_marginTop="8dp" />
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                app:boxStrokeColor="@color/colorPrimary"
+                app:hintTextColor="@color/colorPrimary"
+                app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
+                app:startIconTint="@color/colorPrimary"
+                app:endIconMode="password_toggle"
+                android:textColorHint="@color/textPrimary"
+                android:layout_marginBottom="20dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Botón principal login -->
             <Button
                 android:id="@+id/btn_login"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="16dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
                 android:backgroundTint="@color/colorPrimary"
                 android:textColor="@color/white"
                 android:text="Iniciar sesión"
-                android:drawableLeft="@mipmap/ic_launcher"
-                android:drawablePadding="12dp"
-                android:stateListAnimator="@null" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:elevation="4dp" />
 
             <!-- Botón secundario registrar -->
             <Button
                 android:id="@+id/btn_register"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
                 android:backgroundTint="@color/colorSecondary"
                 android:textColor="@color/white"
                 android:text="Crear cuenta"
-                android:drawableLeft="@mipmap/ic_launcher"
-                android:drawablePadding="12dp"
-                android:stateListAnimator="@null" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:elevation="4dp" />
 
-            <!-- Divider -->
-            <View
+            <!-- Divider con texto -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:background="#E0E0E0" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="20dp">
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#E0E0E0" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="  o  "
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#E0E0E0" />
+            </LinearLayout>
 
             <!-- Sign in with Google -->
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_google"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="16dp"
+                android:layout_height="56dp"
                 android:backgroundTint="@color/white"
                 android:textColor="@color/textPrimary"
-                android:text="Continuar con Google"
-                android:drawableLeft="@mipmap/ic_launcher"
-                android:drawablePadding="12dp"
-                android:stateListAnimator="@null" />
+                android:text="Google"
+                android:textSize="14sp"
+                app:strokeColor="@color/colorPrimary"
+                app:strokeWidth="2dp"
+                app:icon="@drawable/google_icon"
+                app:iconTint="@null"
+                app:iconSize="32dp"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
             <TextView
                 android:id="@+id/tv_terms"

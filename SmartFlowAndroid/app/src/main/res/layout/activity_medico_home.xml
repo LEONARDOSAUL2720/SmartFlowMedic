@@ -5,60 +5,114 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center"
-    android:background="@android:color/white">
+    android:background="@color/colorBackground">
 
-    <ImageView
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:src="@android:drawable/ic_menu_help"
-        android:layout_marginBottom="24dp" />
-
-    <TextView
-        android:id="@+id/tv_welcome"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Bienvenido Dr(a)."
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"
-        android:layout_marginBottom="32dp" />
-
-    <Button
-        android:id="@+id/btn_mis_horarios"
+    <!-- Header con color secundario para médicos -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Configurar Horarios"
-        android:textSize="16sp"
-        android:paddingVertical="16dp"
-        android:layout_marginBottom="12dp" />
+        android:orientation="vertical"
+        android:background="@color/colorSecondary"
+        android:padding="24dp">
 
-    <Button
-        android:id="@+id/btn_mis_citas"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Mis Consultas"
-        android:textSize="16sp"
-        android:paddingVertical="16dp"
-        android:layout_marginBottom="12dp" />
+        <TextView
+            android:id="@+id/tv_welcome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bienvenido Dr(a)."
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/white" />
 
-    <Button
-        android:id="@+id/btn_perfil"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Mi Perfil Profesional"
-        android:textSize="16sp"
-        android:paddingVertical="16dp"
-        android:layout_marginBottom="12dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Panel de control médico"
+            android:textSize="14sp"
+            android:textColor="@color/white"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/btn_cerrar_sesion"
+    <!-- Contenido -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Cerrar Sesión"
-        android:textSize="16sp"
-        android:paddingVertical="16dp"
-        android:backgroundTint="@android:color/holo_red_light" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Card Horarios -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/btn_mis_horarios"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:text="Configurar Horarios"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="@color/colorAccent"
+                    android:textColor="@color/white" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Card Consultas -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/btn_mis_citas"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:text="Mis Consultas"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="@color/colorPrimary"
+                    android:textColor="@color/white" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Card Perfil -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/btn_perfil"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:text="Mi Perfil Profesional"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="@color/colorSecondary"
+                    android:textColor="@color/white" />
+            </androidx.cardview.widget.CardView>
+
+            <Button
+                android:id="@+id/btn_cerrar_sesion"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Cerrar Sesión"
+                android:textSize="14sp"
+                android:backgroundTint="#E53935"
+                android:textColor="@color/white"
+                android:layout_marginTop="24dp" />
+
+        </LinearLayout>
+    </ScrollView>
 
 </LinearLayout>

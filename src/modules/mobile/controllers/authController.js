@@ -8,7 +8,7 @@ const { verifyFirebaseToken } = require('../../../config/firebase');
 // @access  Public
 exports.googleLogin = async (req, res) => {
   try {
-    const { idToken, rol, telefono } = req.body;
+    const { idToken, rol, telefono, password } = req.body;
 
     if (!idToken) {
       return res.status(400).json({
@@ -44,17 +44,52 @@ exports.googleLogin = async (req, res) => {
         });
       }
 
+      // Validar formato de teléfono (10 dígitos)
+      if (!/^\d{10}$/.test(telefono)) {
+        return res.status(400).json({
+          success: false,
+          message: 'El teléfono debe tener exactamente 10 dígitos',
+        });
+      }
+
+      // Validar que el teléfono no esté registrado
+      const telefonoExistente = await Usuario.findOne({ telefono });
+      if (telefonoExistente) {
+        return res.status(400).json({
+          success: false,
+          message: 'Este teléfono ya está registrado',
+        });
+      }
+
+      // Validar que el email no esté registrado
+      const emailExistente = await Usuario.findOne({ email });
+      if (emailExistente) {
+        return res.status(400).json({
+          success: false,
+          message: 'Este email ya está registrado con otro método de login',
+        });
+      }
+
       // Extraer nombre y apellido del displayName de Google
       const nombreCompleto = name || email.split('@')[0];
       const partesNombre = nombreCompleto.split(' ');
       const nombre = partesNombre[0] || nombreCompleto;
       const apellido = partesNombre.slice(1).join(' ') || 'Sin apellido';
 
+      // Validar password si se proporciona
+      if (password && password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'La contraseña debe tener al menos 6 caracteres',
+        });
+      }
+
       const userData = {
         nombre,
         apellido,
         email,
         telefono,
+        password: password || '', // Password sin encriptar - el modelo lo encriptará automáticamente
         firebaseUid: uid,
         platform: 'mobile',
         rol,
@@ -63,9 +98,44 @@ exports.googleLogin = async (req, res) => {
         activo: true,
       };
 
-      // Si es médico, inicializar medicoInfo vacío (se completará después)
+      // Si es médico, agregar campos requeridos de medicoInfo
       if (rol === 'medico') {
+        const { cedulaProfesional, especialidad } = req.body;
+        
+        if (!cedulaProfesional) {
+          return res.status(400).json({
+            success: false,
+            message: 'Cédula profesional es requerida para médicos',
+          });
+        }
+
+        // Validar formato de cédula (7-8 dígitos)
+        if (!/^\d{7,8}$/.test(cedulaProfesional)) {
+          return res.status(400).json({
+            success: false,
+            message: 'La cédula profesional debe tener entre 7 y 8 dígitos',
+          });
+        }
+
+        // Validar que la cédula no esté registrada
+        const cedulaExistente = await Usuario.findOne({ 'medicoInfo.cedula': cedulaProfesional });
+        if (cedulaExistente) {
+          return res.status(400).json({
+            success: false,
+            message: 'Esta cédula profesional ya está registrada',
+          });
+        }
+
+        if (!especialidad) {
+          return res.status(400).json({
+            success: false,
+            message: 'Especialidad es requerida para médicos',
+          });
+        }
+
         userData.medicoInfo = {
+          cedula: cedulaProfesional,
+          especialidad,
           calificacionPromedio: 0,
           totalCitasAtendidas: 0
         };
