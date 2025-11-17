@@ -12,6 +12,14 @@ const especialidadSchema = new mongoose.Schema(
       required: [true, 'Breve descripción de la especialidad'],
       trim: true,
     },
+    codigo: {
+      type: String,
+      required: true,
+      unique: true,
+      uppercase: true,
+      maxlength: 1,
+      description: 'Letra para identificar turnos (A, B, C, etc.)'
+    },
     activa: {
       type: Boolean,
       default: true,

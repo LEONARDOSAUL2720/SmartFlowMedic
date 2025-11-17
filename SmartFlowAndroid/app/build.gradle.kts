@@ -49,6 +49,9 @@ dependencies {
     // Coil para cargar imágenes (de URLs como la foto de Google)
     implementation("io.coil-kt:coil:2.5.0")
 
+    // Glide para cargar imágenes en RecyclerView
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

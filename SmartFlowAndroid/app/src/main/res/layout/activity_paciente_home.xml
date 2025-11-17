@@ -4,48 +4,73 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="25dp"
+    android:layout_marginTop="35dp"
     android:background="@color/colorBackground">
 
-    <!-- Header con color primario -->
+    <!-- Header moderno con foto de perfil -->
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="@color/colorPrimary"
-        android:padding="20dp"
+        android:padding="16dp"
         android:gravity="center_vertical"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Foto de perfil circular -->
+        <ImageView
+            android:id="@+id/iv_user_photo"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/ic_launcher_foreground"
+            android:background="@drawable/circle_white_bg"
+            android:scaleType="centerCrop"
+            android:contentDescription="Foto de perfil" />
 
         <!-- Textos de bienvenida -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="12dp"
             android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hola,"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:alpha="0.9" />
 
             <TextView
                 android:id="@+id/tv_welcome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bienvenido Paciente"
-                android:textSize="24sp"
+                android:text="Paciente"
+                android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="@color/white" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="¿Qué deseas hacer hoy?"
-                android:textSize="14sp"
                 android:textColor="@color/white"
-                android:layout_marginTop="4dp" />
+                android:maxLines="1"
+                android:ellipsize="end" />
         </LinearLayout>
 
-        <!-- Botón de cerrar sesión en la esquina -->
+        <!-- Icono de notificaciones -->
+        <ImageButton
+            android:id="@+id/btn_notifications"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_notifications"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:scaleType="centerInside"
+            android:padding="12dp"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="Notificaciones" />
+
+        <!-- Botón de cerrar sesión -->
         <ImageButton
             android:id="@+id/btn_logout_header"
             android:layout_width="48dp"
@@ -53,57 +78,125 @@
             android:src="@drawable/log_out_icon"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
-            android:padding="8dp"
+            android:padding="12dp"
             android:contentDescription="Cerrar sesión" />
 
     </LinearLayout>
 
-    <!-- Contenido principal -->
-    <FrameLayout
+    <!-- Contenido principal con scroll vertical -->
+    <ScrollView
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Contenido de Inicio (Home) -->
-        <ScrollView
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
+            <!-- Sección 1: Mis Próximas Citas -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="16dp">
+
+                <!-- Título -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📅 Mis Próximas Citas"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimary"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="12dp" />
+
+                <!-- RecyclerView Horizontal para citas -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_citas"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"/>
+
+                <!-- Mensaje cuando no hay citas -->
+                <TextView
+                    android:id="@+id/tv_no_citas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="200dp"
+                    android:gravity="center"
+                    android:layout_gravity="center"
+                    android:text="No tienes citas próximas"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="16dp"
+                android:background="@android:color/darker_gray"
+                android:alpha="0.2"/>
+
+            <!-- Sección 2: Turnos Disponibles Hoy -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- Título -->
                 <TextView
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Inicio"
+                    android:text="🏥 Turnos Disponibles Hoy"
                     android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="@color/colorPrimary"
-                    android:layout_marginBottom="16dp" />
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="12dp" />
 
-                <TextView
+                <!-- RecyclerView Horizontal para turnos -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_turnos"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Bienvenido a SmartFlow. Usa el menú inferior para navegar entre las diferentes secciones."
-                    android:textSize="16sp"
-                    android:textColor="@color/textPrimary"
-                    android:layout_marginBottom="24dp" />
+                    android:layout_height="180dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="16dp"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"/>
 
-                <!-- Aquí puedes agregar más contenido del Home -->
-                <!-- Por ejemplo: próximas citas, recordatorios, etc. -->
+                <!-- Mensaje cuando no hay turnos -->
+                <TextView
+                    android:id="@+id/tv_no_turnos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="180dp"
+                    android:gravity="center"
+                    android:layout_gravity="center"
+                    android:text="No hay turnos disponibles"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:visibility="gone"/>
 
             </LinearLayout>
 
-        </ScrollView>
+        </LinearLayout>
 
-    </FrameLayout>
+    </ScrollView>
 
     <!-- Bottom Navigation Bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView

@@ -57,3 +57,39 @@ Esta paleta está diseñada para una aplicación del ámbito médico, especialme
 En conjunto, los colores mantienen un equilibrio armónico, moderno y enfocado en la experiencia del paciente y el profesional.
 
 ---
+
+## 🎴 Gradientes para Tarjetas (Diseño Moderno)
+
+Estos gradientes se usarán para las tarjetas deslizables (carousel) en el home del paciente:
+
+### **Tarjetas de Citas Próximas**
+| Elemento                 | Gradiente                  | Hex                      | Uso                                    |
+| ------------------------ | -------------------------- | ------------------------ | -------------------------------------- |
+| **Cita Principal**       | Azul Oscuro → Azul Medio   | `#2A6FB0` → `#1E5A8C`    | Fondo de tarjeta con gradiente suave   |
+| **Acento Verde**         | Verde Secundario           | `#57B894`                | Badge de estado confirmado             |
+
+### **Tarjetas de Turnos por Especialidad**
+| Especialidad            | Gradiente                  | Hex                      | Código |
+| ----------------------- | -------------------------- | ------------------------ | ------ |
+| **Medicina General**    | Azul Primario → Oscuro     | `#2A6FB0` → `#1E5A8C`    | M      |
+| **Cardiología**         | Rojo Coral → Rojo Oscuro   | `#E74C3C` → `#C0392B`    | A      |
+| **Dermatología**        | Azul Cielo → Azul Profundo | `#3498DB` → `#2980B9`    | B      |
+| **Pediatría**           | Púrpura → Púrpura Oscuro   | `#9B59B6` → `#8E44AD`    | C      |
+| **Traumatología**       | Naranja → Naranja Oscuro   | `#E67E22` → `#D35400`    | E      |
+
+### **Estados de Tarjetas**
+| Estado                  | Color                      | Hex         | Uso                                    |
+| ----------------------- | -------------------------- | ----------- | -------------------------------------- |
+| **Confirmada**          | Verde                      | `#27AE60`   | Badge verde en tarjeta                 |
+| **Pendiente**           | Naranja                    | `#F39C12`   | Badge naranja en tarjeta               |
+| **En Espera**           | Azul Claro                 | `#3498DB`   | Badge azul claro                       |
+| **Atendiendo**          | Verde Brillante            | `#2ECC71`   | Indicador de turno actual              |
+
+### **Efectos Visuales**
+- **Elevación**: 8dp con sombra suave (#000000 al 15%)
+- **Esquinas**: 16dp de radio
+- **Padding interno**: 20dp
+- **Espaciado entre tarjetas**: 16dp
+- **Opacidad de fondo**: 100% para mejor legibilidad
+
+---

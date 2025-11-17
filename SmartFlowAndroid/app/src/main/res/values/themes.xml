@@ -24,4 +24,10 @@
     </style>
 
     <style name="Theme.SmartFlow" parent="Base.Theme.SmartFlow" />
+    
+    <!-- Tema para Splash Screen (pantalla completa sin action bar) -->
+    <style name="Theme.SmartFlow.NoActionBar" parent="Base.Theme.SmartFlow">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
 </resources>

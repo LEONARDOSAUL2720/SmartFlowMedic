@@ -4,13 +4,13 @@ const citaSchema = new mongoose.Schema(
   {
     pacienteId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Usuario',
       required: [true, 'ID del paciente es requerido'],
       description: 'ID del paciente',
     },
     medicoId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Usuario',
       required: [true, 'ID del médico es requerido'],
       description: 'ID del médico',
     },

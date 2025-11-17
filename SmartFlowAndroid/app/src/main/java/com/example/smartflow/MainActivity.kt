@@ -192,13 +192,14 @@ class MainActivity : AppCompatActivity() {
                     if (success) {
                         val token = json.getString("token")
                         val user = json.getJSONObject("user")
+                        val userId = user.getString("id")
                         val rol = user.getString("rol")
                         val nombre = user.optString("nombre", "Usuario")
                         val foto = user.optString("foto", null)
 
                         // Guardar token, nombre y foto
                         saveToken(token)
-                        saveUserData(nombre, foto)
+                        saveUserData(userId, nombre, foto)
                         navigateByRole(rol)
                     }
                 }
@@ -413,12 +414,13 @@ class MainActivity : AppCompatActivity() {
                     if (success) {
                         val token = json.getString("token")
                         val user = json.getJSONObject("user")
+                        val userId = user.getString("id")
                         val rol = user.getString("rol")
                         val nombre = user.optString("nombre", "Usuario")
                         val foto = user.optString("foto", null)
 
                         saveToken(token)
-                        saveUserData(nombre, foto)
+                        saveUserData(userId, nombre, foto)
                         navigateByRole(rol)
                     }
                 }
@@ -442,17 +444,18 @@ class MainActivity : AppCompatActivity() {
         Log.d("MainActivity", "Token guardado")
     }
 
-    // Guardar datos del usuario (nombre y foto)
-    private fun saveUserData(nombre: String, foto: String?) {
+    // Guardar datos del usuario (ID, nombre y foto)
+    private fun saveUserData(userId: String, nombre: String, foto: String?) {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         prefs.edit().apply {
+            putString("user_id", userId)
             putString("user_nombre", nombre)
             if (foto != null) {
                 putString("user_foto", foto)
             }
             apply()
         }
-        Log.d("MainActivity", "Datos de usuario guardados: $nombre")
+        Log.d("MainActivity", "Datos de usuario guardados: ID=$userId, nombre=$nombre")
     }
 
     // Navegar según rol del usuario

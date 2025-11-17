@@ -15,15 +15,23 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SmartFlow"
         android:networkSecurityConfig="@xml/network_security_config">
+        
+        <!-- Splash Screen - Primera pantalla -->
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SmartFlow.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Pantalla de login -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
         
         <!-- Pantalla de inicio para Pacientes -->
         <activity
