@@ -5,6 +5,19 @@ package-lock.json
 # Environment variables
 .env
 
+# Ignorar proyecto de android studio completo 
+SmartFlowAndorid/
+*.iml
+.idea/
+.gradle/
+build/
+app/build/
+captures/
+local.properties
+*.apk
+*.aab
+
+
 # Logs
 logs/
 *.log
