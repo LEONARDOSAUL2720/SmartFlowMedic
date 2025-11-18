@@ -91,46 +91,75 @@ class MainActivity : AppCompatActivity() {
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        Log.d("MainActivity", "🎯 Google Sign-In result received")
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account = task.getResult(Exception::class.java)
+            Log.d("MainActivity", "✅ Account: ${account?.email}")
             val idToken = account?.idToken
             if (idToken != null) {
+                Log.d("MainActivity", "✅ ID Token obtenido, longitud: ${idToken.length}")
+                // Autenticar con Firebase para obtener el token correcto
                 firebaseAuthWithGoogle(idToken)
             } else {
+                Log.e("MainActivity", "❌ ID Token es null")
                 Toast.makeText(this, "Error al obtener idToken de Google", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
-            Log.e("MainActivity", "Google sign in failed", e)
-            Toast.makeText(this, "Error con Google Sign-In", Toast.LENGTH_SHORT).show()
+            Log.e("MainActivity", "❌ Google sign in failed", e)
+            Toast.makeText(this, "Error con Google Sign-In: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
     // Autenticar con Firebase (solo para obtener el idToken fresco)
     private fun firebaseAuthWithGoogle(idToken: String) {
+        Log.d("MainActivity", "🔥 Iniciando Firebase auth con Google...")
         val credential = GoogleAuthProvider.getCredential(idToken, null)
+        
+        // Timeout de 15 segundos para Firebase
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        var taskCompleted = false
+        
+        handler.postDelayed({
+            if (!taskCompleted) {
+                Log.e("MainActivity", "⏱️ Firebase auth TIMEOUT - tardó más de 15 segundos")
+                Toast.makeText(this, "Error: Firebase no responde. Verifica tu conexión a Internet", Toast.LENGTH_LONG).show()
+            }
+        }, 15000)
+        
         auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
+            taskCompleted = true
             if (task.isSuccessful) {
-                // Obtener idToken fresco y enviarlo al backend
+                Log.d("MainActivity", "✅ Firebase auth exitoso, usuario: ${auth.currentUser?.email}")
+                // Obtener idToken fresco de FIREBASE (no de Google)
                 auth.currentUser?.getIdToken(true)?.addOnCompleteListener { t ->
                     if (t.isSuccessful) {
-                        val freshToken = t.result?.token
-                        if (freshToken != null) {
-                            // Primera llamada al backend (sin rol ni teléfono)
-                            sendGoogleTokenToBackend(freshToken)
+                        val firebaseToken = t.result?.token
+                        if (firebaseToken != null) {
+                            Log.d("MainActivity", "✅ Firebase token obtenido, longitud: ${firebaseToken.length}")
+                            // Enviar el token de FIREBASE al backend
+                            sendGoogleTokenToBackend(firebaseToken)
+                        } else {
+                            Log.e("MainActivity", "❌ Firebase token es null")
+                            Toast.makeText(this, "Error: No se pudo obtener token de Firebase", Toast.LENGTH_LONG).show()
                         }
                     } else {
-                        Toast.makeText(this, "Error al obtener token", Toast.LENGTH_SHORT).show()
+                        Log.e("MainActivity", "❌ Error obteniendo Firebase token: ${t.exception?.message}")
+                        Toast.makeText(this, "Error al obtener token: ${t.exception?.message}", Toast.LENGTH_LONG).show()
                     }
                 }
             } else {
-                Toast.makeText(this, "Firebase auth failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                Log.e("MainActivity", "❌ Firebase auth failed: ${task.exception?.message}", task.exception)
+                task.exception?.printStackTrace()
+                Toast.makeText(this, "Error Firebase: ${task.exception?.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
 
     // Enviar Google idToken al backend (primera vez - sin datos extra)
     private fun sendGoogleTokenToBackend(idToken: String, rol: String? = null, telefono: String? = null, especialidad: String? = null, cedula: String? = null, password: String? = null) {
+        Log.d("MainActivity", "🚀 Enviando token de Google al backend...")
+        Log.d("MainActivity", "URL: $BACKEND_URL/auth/google")
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val url = URL("$BACKEND_URL/auth/google")
@@ -156,6 +185,8 @@ class MainActivity : AppCompatActivity() {
                 conn.outputStream.use { os ->
                     os.write(jsonBody.toString().toByteArray())
                 }
+                
+                Log.d("MainActivity", "📤 JSON enviado: ${jsonBody.toString()}")
 
                 val responseCode = conn.responseCode
                 val responseBody = if (responseCode in 200..299) {

@@ -5,6 +5,9 @@ const turnosController = require('../controllers/turnosController');
 // GET - Obtener resumen de turnos de hoy (todas las especialidades)
 router.get('/resumen/hoy', turnosController.getResumenTurnosHoy);
 
+// GET - Obtener horarios disponibles para tomar turnos
+router.get('/horarios-disponibles', turnosController.getHorariosDisponibles);
+
 // GET - Obtener turnos del día por especialidad
 router.get('/especialidad/:especialidadId', turnosController.getTurnosDelDia);
 

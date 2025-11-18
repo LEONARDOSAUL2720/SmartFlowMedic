@@ -9,6 +9,12 @@ interface TurnosApiService {
     @GET("turnos/resumen/hoy")
     fun getResumenTurnosHoy(): Call<ResumenTurnosResponse>
     
+    @GET("turnos/horarios-disponibles")
+    fun getHorariosDisponibles(
+        @Query("especialidadId") especialidadId: String? = null,
+        @Query("medicoId") medicoId: String? = null
+    ): Call<HorariosDisponiblesResponse>
+    
     @GET("turnos/especialidad/{especialidadId}")
     fun getTurnosDelDia(
         @Path("especialidadId") especialidadId: String

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginTop="35dp"
-    android:background="@color/colorBackground">
+    android:background="#F5F5F5">
 
     <!-- Header moderno con foto de perfil -->
     <LinearLayout
@@ -99,24 +100,58 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Sección 1: Mis Próximas Citas -->
+            <!-- Sección 1: Mis Citas Agendadas -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingTop="16dp">
 
-                <!-- Título -->
-                <TextView
-                    android:layout_width="wrap_content"
+                <!-- Header con icono y título -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="📅 Mis Próximas Citas"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/colorPrimary"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
-                    android:paddingBottom="12dp" />
+                    android:paddingBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_calendar_check"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Mis Citas Agendadas"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorPrimary" />
+
+                </LinearLayout>
+
+                <!-- Filtros de especialidad para citas -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:contentDescription="Filtros de especialidad para citas"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="12dp">
+
+                    <LinearLayout
+                        android:id="@+id/ll_filtros_citas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <!-- Chips se generarán dinámicamente -->
+                    </LinearLayout>
+                </HorizontalScrollView>
 
                 <!-- RecyclerView Horizontal para citas -->
                 <androidx.recyclerview.widget.RecyclerView
@@ -126,7 +161,7 @@
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
                     android:clipToPadding="false"
-                    android:orientation="horizontal"/>
+                    android:orientation="horizontal" />
 
                 <!-- Mensaje cuando no hay citas -->
                 <TextView
@@ -135,10 +170,10 @@
                     android:layout_height="200dp"
                     android:gravity="center"
                     android:layout_gravity="center"
-                    android:text="No tienes citas próximas"
+                    android:text="No tienes citas agendadas"
                     android:textSize="16sp"
                     android:textColor="@android:color/darker_gray"
-                    android:visibility="gone"/>
+                    android:visibility="gone" />
 
             </LinearLayout>
 
@@ -149,25 +184,70 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="16dp"
                 android:background="@android:color/darker_gray"
-                android:alpha="0.2"/>
+                android:alpha="0.2" />
 
-            <!-- Sección 2: Turnos Disponibles Hoy -->
+            <!-- Sección 2: Tomar Turno Virtual -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Título -->
+                <!-- Header con icono y título -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_queue"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Tomar Turno Virtual"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorPrimary" />
+
+                </LinearLayout>
+
+                <!-- Subtítulo -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🏥 Turnos Disponibles Hoy"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/colorPrimary"
-                    android:paddingStart="16dp"
+                    android:text="Sin cita previa • Por orden de llegada"
+                    android:textSize="13sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:paddingStart="48dp"
                     android:paddingEnd="16dp"
                     android:paddingBottom="12dp" />
+
+                <!-- Filtros de especialidad para turnos -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:contentDescription="Filtros de especialidad para turnos"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="12dp">
+
+                    <LinearLayout
+                        android:id="@+id/ll_filtros_turnos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <!-- Chips se generarán dinámicamente -->
+                    </LinearLayout>
+                </HorizontalScrollView>
 
                 <!-- RecyclerView Horizontal para turnos -->
                 <androidx.recyclerview.widget.RecyclerView
@@ -178,7 +258,7 @@
                     android:paddingEnd="16dp"
                     android:paddingBottom="16dp"
                     android:clipToPadding="false"
-                    android:orientation="horizontal"/>
+                    android:orientation="horizontal" />
 
                 <!-- Mensaje cuando no hay turnos -->
                 <TextView
@@ -190,7 +270,103 @@
                     android:text="No hay turnos disponibles"
                     android:textSize="16sp"
                     android:textColor="@android:color/darker_gray"
-                    android:visibility="gone"/>
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="16dp"
+                android:background="@android:color/darker_gray"
+                android:alpha="0.2" />
+
+            <!-- Sección 3: Fila Virtual de Citas HOY -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="24dp">
+
+                <!-- Header con icono y título -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_my_turn"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Fila Virtual HOY"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/colorPrimary" />
+
+                </LinearLayout>
+
+                <!-- Subtítulo -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Citas de todos los pacientes • Ver mi posición en tiempo real"
+                    android:textSize="13sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:paddingStart="48dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="12dp" />
+
+                <!-- Filtros de especialidad para fila virtual -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:contentDescription="Filtros de especialidad para fila virtual"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="12dp">
+
+                    <LinearLayout
+                        android:id="@+id/ll_filtros_fila"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <!-- Chips se generarán dinámicamente -->
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <!-- RecyclerView Horizontal para citas de la fila virtual -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_fila_virtual"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal" />
+
+                <!-- Mensaje cuando no hay citas en la fila -->
+                <TextView
+                    android:id="@+id/tv_no_fila"
+                    android:layout_width="wrap_content"
+                    android:layout_height="200dp"
+                    android:gravity="center"
+                    android:layout_gravity="center"
+                    android:text="No hay citas programadas para hoy"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:visibility="gone" />
 
             </LinearLayout>
 

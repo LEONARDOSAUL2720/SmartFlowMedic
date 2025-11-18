@@ -208,3 +208,107 @@ exports.getHistorialCitas = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Obtener TODAS las citas del día actual (fila virtual)
+ * @route   GET /api/mobile/citas/hoy
+ * @access  Private
+ */
+exports.getCitasHoy = async (req, res) => {
+  try {
+    const { especialidadId, medicoId } = req.query;
+
+    // Obtener fecha de hoy (inicio y fin del día)
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const mañana = new Date(hoy);
+    mañana.setDate(mañana.getDate() + 1);
+
+    // Construir query
+    const query = {
+      fecha: { $gte: hoy, $lt: mañana },
+      estado: { $in: ['pendiente', 'confirmada', 'completada'] }
+    };
+
+    if (medicoId) {
+      query.medicoId = medicoId;
+    }
+
+    // Obtener citas con populate
+    let citas = await Cita.find(query)
+      .populate({
+        path: 'medicoId',
+        select: 'nombre apellido foto medicoInfo.especialidades',
+        populate: {
+          path: 'medicoInfo.especialidades',
+          model: 'Especialidad',
+          select: '_id nombre codigo'
+        }
+      })
+      .populate('pacienteId', 'nombre apellido foto')
+      .sort({ hora: 1 });
+
+    // Filtrar por especialidad si se proporciona
+    if (especialidadId) {
+      citas = citas.filter(cita => {
+        const especialidades = cita.medicoId?.medicoInfo?.especialidades || [];
+        return especialidades.some(esp => esp._id.toString() === especialidadId);
+      });
+    }
+
+    // Agrupar por hora
+    const citasPorHora = {};
+    citas.forEach(cita => {
+      const hora = cita.hora;
+      if (!citasPorHora[hora]) {
+        citasPorHora[hora] = [];
+      }
+
+      const medico = cita.medicoId;
+      const paciente = cita.pacienteId;
+      const especialidades = medico?.medicoInfo?.especialidades || [];
+
+      citasPorHora[hora].push({
+        _id: cita._id,
+        hora: cita.hora,
+        estado: cita.estado,
+        motivo: cita.motivo,
+        medico: {
+          _id: medico?._id,
+          nombre: `${medico?.nombre} ${medico?.apellido}`,
+          foto: medico?.foto,
+          especialidad: especialidades[0]?.nombre || 'General',
+          especialidadCodigo: especialidades[0]?.codigo || 'M'
+        },
+        paciente: {
+          _id: paciente?._id,
+          nombre: `${paciente?.nombre} ${paciente?.apellido}`,
+          foto: paciente?.foto
+        }
+      });
+    });
+
+    // Convertir a array ordenado
+    const resultado = Object.keys(citasPorHora)
+      .sort()
+      .map(hora => ({
+        hora,
+        citas: citasPorHora[hora]
+      }));
+
+    res.status(200).json({
+      success: true,
+      fecha: hoy,
+      totalCitas: citas.length,
+      data: resultado
+    });
+
+  } catch (error) {
+    console.error('Error al obtener citas de hoy:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener citas de hoy',
+      error: error.message
+    });
+  }
+};
