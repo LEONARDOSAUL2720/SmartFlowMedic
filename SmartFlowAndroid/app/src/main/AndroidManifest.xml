@@ -42,6 +42,11 @@
         <activity
             android:name=".MedicoHomeActivity"
             android:exported="false" />
+
+        <!-- Activity para generar cita -->
+        <activity
+            android:name=".GenerarCitaActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

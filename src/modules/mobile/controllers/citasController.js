@@ -1,6 +1,7 @@
 const Cita = require('../../../models/Cita');
 const Usuario = require('../../../models/Usuario');
 const Especialidad = require('../../../models/Especialidad');
+const mongoose = require('mongoose');
 
 /**
  * @desc    Obtener todas las citas de un paciente
@@ -312,3 +313,245 @@ exports.getCitasHoy = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Crear una nueva cita
+ * @route   POST /api/mobile/citas/crear
+ * @access  Private
+ */
+exports.crearCita = async (req, res) => {
+  try {
+    const { pacienteId, medicoId, fecha, hora, motivo, modoPago } = req.body;
+
+    // 1. Validar campos requeridos
+    if (!pacienteId || !medicoId || !fecha || !hora || !motivo || !modoPago) {
+      return res.status(400).json({
+        success: false,
+        message: 'Todos los campos son requeridos: pacienteId, medicoId, fecha, hora, motivo, modoPago'
+      });
+    }
+
+    // 2. Validar que el paciente existe
+    const paciente = await Usuario.findById(pacienteId);
+    if (!paciente || paciente.rol !== 'paciente') {
+      return res.status(404).json({
+        success: false,
+        message: 'Paciente no encontrado o rol inválido'
+      });
+    }
+
+    // 3. Validar que el médico existe y obtener su info
+    const medico = await Usuario.findById(medicoId).populate('medicoInfo.especialidades');
+    if (!medico || medico.rol !== 'medico') {
+      return res.status(404).json({
+        success: false,
+        message: 'Médico no encontrado o rol inválido'
+      });
+    }
+
+    // 4. Validar que el médico tenga tarifaConsulta
+    if (!medico.medicoInfo?.tarifaConsulta) {
+      return res.status(400).json({
+        success: false,
+        message: 'El médico no tiene tarifa de consulta configurada'
+      });
+    }
+
+    // 5. Validar fecha (debe ser hoy o futura)
+    const fechaCita = new Date(fecha);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    
+    if (fechaCita < hoy) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha de la cita no puede ser anterior a hoy'
+      });
+    }
+
+    // 6. Validar que el médico trabaje ese día y hora
+    const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][fechaCita.getDay()];
+    const horariosDisponibles = medico.medicoInfo?.horariosDisponibles || [];
+    
+    const trabajaEseDia = horariosDisponibles.find(h => h.dia === diaSemana);
+    if (!trabajaEseDia) {
+      return res.status(400).json({
+        success: false,
+        message: `El médico no trabaja los días ${diaSemana}`
+      });
+    }
+
+    // 7. Validar que la hora esté dentro del horario del médico
+    const [horaInicio, minutoInicio] = trabajaEseDia.horaInicio.split(':').map(Number);
+    const [horaFin, minutoFin] = trabajaEseDia.horaFin.split(':').map(Number);
+    const [horaCita, minutoCita] = hora.split(':').map(Number);
+    
+    const minutosInicio = horaInicio * 60 + minutoInicio;
+    const minutosFin = horaFin * 60 + minutoFin;
+    const minutosCita = horaCita * 60 + minutoCita;
+    
+    if (minutosCita < minutosInicio || minutosCita >= minutosFin) {
+      return res.status(400).json({
+        success: false,
+        message: `El médico trabaja de ${trabajaEseDia.horaInicio} a ${trabajaEseDia.horaFin} los ${diaSemana}`
+      });
+    }
+
+    // 8. Verificar que no exista otra cita en ese horario
+    const citaExistente = await Cita.findOne({
+      medicoId,
+      fecha: fechaCita,
+      hora,
+      estado: { $in: ['pendiente', 'confirmada'] }
+    });
+
+    if (citaExistente) {
+      return res.status(409).json({
+        success: false,
+        message: 'Ya existe una cita en ese horario. Por favor selecciona otra hora.'
+      });
+    }
+
+    // 9. Crear la cita
+    const nuevaCita = await Cita.create({
+      pacienteId,
+      medicoId,
+      fecha: fechaCita,
+      hora,
+      estado: 'pendiente',
+      motivo,
+      modoPago,
+      pagado: false,
+      monto: medico.medicoInfo.tarifaConsulta
+    });
+
+    // 10. Populate para devolver datos completos
+    const citaCompleta = await Cita.findById(nuevaCita._id)
+      .populate({
+        path: 'medicoId',
+        select: 'nombre apellido foto medicoInfo.especialidades medicoInfo.tarifaConsulta',
+        populate: {
+          path: 'medicoInfo.especialidades',
+          model: 'Especialidad',
+          select: 'nombre codigo descripcion'
+        }
+      })
+      .populate('pacienteId', 'nombre apellido email foto');
+
+    // 11. Formatear respuesta
+    const medico_data = citaCompleta.medicoId;
+    const paciente_data = citaCompleta.pacienteId;
+    const especialidades = medico_data?.medicoInfo?.especialidades || [];
+
+    const respuesta = {
+      _id: citaCompleta._id,
+      fecha: citaCompleta.fecha,
+      hora: citaCompleta.hora,
+      estado: citaCompleta.estado,
+      motivo: citaCompleta.motivo,
+      monto: citaCompleta.monto,
+      pagado: citaCompleta.pagado,
+      modoPago: citaCompleta.modoPago,
+      medico: {
+        _id: medico_data?._id,
+        nombre: medico_data?.nombre,
+        apellido: medico_data?.apellido,
+        foto: medico_data?.foto,
+        especialidades: especialidades.map(esp => ({
+          _id: esp._id,
+          nombre: esp.nombre,
+          codigo: esp.codigo,
+          descripcion: esp.descripcion
+        })),
+        tarifaConsulta: medico_data?.medicoInfo?.tarifaConsulta
+      },
+      paciente: {
+        _id: paciente_data?._id,
+        nombre: paciente_data?.nombre,
+        apellido: paciente_data?.apellido,
+        email: paciente_data?.email,
+        foto: paciente_data?.foto
+      },
+      creadoEn: citaCompleta.creadoEn
+    };
+
+    res.status(201).json({
+      success: true,
+      message: 'Cita creada exitosamente',
+      data: respuesta
+    });
+
+  } catch (error) {
+    console.error('Error al crear cita:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear la cita',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Verificar si hay cambios en las citas desde la última actualización (Polling inteligente)
+ * @route   GET /api/mobile/citas/verificar-cambios/:userId
+ * @access  Private
+ */
+exports.verificarCambiosCitas = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { ultimaActualizacion } = req.query;
+
+    // Validar parámetros
+    if (!userId || !ultimaActualizacion) {
+      return res.status(400).json({
+        success: false,
+        message: 'Faltan parámetros requeridos (userId y ultimaActualizacion)'
+      });
+    }
+
+    // ✅ Validar que userId sea un ObjectId válido
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El userId proporcionado no es un ObjectId válido'
+      });
+    }
+
+    // Convertir timestamp a fecha
+    const ultimaActualizacionDate = new Date(parseInt(ultimaActualizacion));
+
+    // Validar que la fecha sea válida
+    if (isNaN(ultimaActualizacionDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'El timestamp proporcionado no es válido'
+      });
+    }
+
+    // Buscar citas que se crearon o actualizaron después de la última verificación
+    const citasNuevas = await Cita.find({
+      pacienteId: userId,
+      $or: [
+        { createdAt: { $gt: ultimaActualizacionDate } },
+        { updatedAt: { $gt: ultimaActualizacionDate } }
+      ]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        hayNuevas: citasNuevas.length > 0,
+        cantidad: citasNuevas.length,
+        ultimaActualizacion: Date.now()
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al verificar cambios en citas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al verificar cambios',
+      error: error.message
+    });
+  }
+}; 

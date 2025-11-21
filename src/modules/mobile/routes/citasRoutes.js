@@ -10,4 +10,10 @@ router.get('/paciente/:pacienteId/historial', citasController.getHistorialCitas)
 // Nueva ruta para fila virtual de citas HOY
 router.get('/hoy', citasController.getCitasHoy);
 
+// POST - Crear nueva cita
+router.post('/crear', citasController.crearCita);
+
+//Verificar si hay cambios en las citas (Polling inteligente)
+router.get('/verificar-cambios/:userId', citasController.verificarCambiosCitas);
+
 module.exports = router;

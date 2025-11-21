@@ -180,8 +180,9 @@ class PacienteHomeActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_citas -> {
-                    Toast.makeText(this, "Mis citas", Toast.LENGTH_SHORT).show()
-                    // TODO: Navegar a mis citas
+                    // Navegar a la activity de generar cita
+                    val intent = Intent(this, GenerarCitaActivity::class.java)
+                    startActivity(intent)
                     true
                 }
                 R.id.nav_perfil -> {

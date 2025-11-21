@@ -33,3 +33,13 @@ data class MedicoInfoRequest(
     val descripcion: String? = null,
     val experiencia: String? = null
 )
+
+// Request para crear cita
+data class CrearCitaRequest(
+    val pacienteId: String,
+    val medicoId: String,
+    val fecha: String,      // Formato: "2025-11-20"
+    val hora: String,       // Formato: "10:00"
+    val motivo: String,
+    val modoPago: String    // "online" o "efectivo"
+)
