@@ -20,3 +20,15 @@ data class MedicoInfoData(
     val calificacionPromedio: Double?,
     val totalCitasAtendidas: Int?
 )
+
+// Modelo para médicos con horarios disponibles (usado en GenerarCita)
+data class MedicoHorarios(
+    val _id: String,
+    val nombre: String,
+    val apellido: String,
+    val foto: String?,
+    val especialidades: List<String>,
+    val tarifaConsulta: Int?,
+    val calificacionPromedio: Double?,
+    val totalCitasAtendidas: Int?
+)

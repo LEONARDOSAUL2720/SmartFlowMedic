@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Paso 3: Selecciona una Fecha"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/purple_500"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Elige la fecha para tu cita:"
+        android:textSize="14sp"
+        android:layout_marginBottom="16dp" />
+
+    <CalendarView
+        android:id="@+id/calendar_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/tv_fecha_seleccionada"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fecha seleccionada: -"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/purple_500"
+        android:textAlignment="center"
+        android:visibility="gone" />
+
+</LinearLayout>

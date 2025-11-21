@@ -33,3 +33,32 @@ data class MedicoInfoRequest(
     val descripcion: String? = null,
     val experiencia: String? = null
 )
+
+// Request para crear cita
+data class CrearCitaRequest(
+    val pacienteId: String,
+    val medicoId: String,
+    val fecha: String,
+    val hora: String,
+    val motivo: String,
+    val modoPago: String = "efectivo" // "efectivo" u "online"
+)
+
+// Response para crear cita
+data class CrearCitaResponse(
+    val success: Boolean,
+    val message: String? = null,
+    val data: CitaCreada? = null
+)
+
+data class CitaCreada(
+    val _id: String,
+    val pacienteId: String,
+    val medicoId: String,
+    val fecha: String,
+    val hora: String,
+    val motivo: String,
+    val modoPago: String,
+    val estado: String,
+    val fechaCreacion: String
+)
