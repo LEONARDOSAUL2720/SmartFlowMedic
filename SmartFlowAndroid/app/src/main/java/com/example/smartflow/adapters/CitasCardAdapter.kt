@@ -16,7 +16,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class CitasCardAdapter(
-    private var citas: List<Cita>,
+    private var citas: MutableList<Cita>,
     private val onCitaClick: (Cita) -> Unit
 ) : RecyclerView.Adapter<CitasCardAdapter.CitaCardViewHolder>() {
 
@@ -109,8 +109,66 @@ class CitasCardAdapter(
 
     override fun getItemCount() = citas.size
 
+    // ✅ Método original - Reemplaza toda la lista
     fun updateCitas(newCitas: List<Cita>) {
-        citas = newCitas
+        citas.clear()
+        citas.addAll(newCitas)
         notifyDataSetChanged()
+    }
+
+    // ✅ NUEVOS MÉTODOS PARA ACTUALIZACIÓN INTELIGENTE
+
+    // Agregar cita al inicio (sin recargar todo)
+    fun agregarCita(cita: Cita) {
+        citas.add(0, cita)
+        notifyItemInserted(0)
+    }
+
+    // Actualizar cita por posición
+    fun actualizarCita(position: Int, cita: Cita) {
+        if (position in citas.indices) {
+            citas[position] = cita
+            notifyItemChanged(position)
+        }
+    }
+
+    // Actualizar cita por ID
+    fun actualizarCitaPorId(citaId: String, citaActualizada: Cita) {
+        val index = citas.indexOfFirst { it._id == citaId }
+        if (index != -1) {
+            citas[index] = citaActualizada
+            notifyItemChanged(index)
+        }
+    }
+
+    // Eliminar cita por posición
+    fun eliminarCita(position: Int) {
+        if (position in citas.indices) {
+            citas.removeAt(position)
+            notifyItemRemoved(position)
+            // Actualizar números de citas restantes
+            notifyItemRangeChanged(position, citas.size - position)
+        }
+    }
+
+    // Eliminar cita por ID
+    fun eliminarCitaPorId(citaId: String) {
+        val index = citas.indexOfFirst { it._id == citaId }
+        if (index != -1) {
+            citas.removeAt(index)
+            notifyItemRemoved(index)
+            // Actualizar números de citas restantes
+            notifyItemRangeChanged(index, citas.size - index)
+        }
+    }
+
+    // Obtener lista actual de citas
+    fun getCitasActuales(): List<Cita> {
+        return citas.toList()
+    }
+
+    // Verificar si una cita ya existe
+    fun existeCita(citaId: String): Boolean {
+        return citas.any { it._id == citaId }
     }
 }

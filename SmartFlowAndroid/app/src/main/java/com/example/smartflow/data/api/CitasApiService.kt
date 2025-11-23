@@ -1,5 +1,6 @@
 package com.example.smartflow.data.api
 
+import com.example.smartflow.data.models.CambiosCitasResponse
 import com.example.smartflow.data.models.CitasResponse
 import com.example.smartflow.data.models.CitasHoyResponse
 import com.example.smartflow.data.models.CrearCitaRequest
@@ -28,9 +29,15 @@ interface CitasApiService {
         @Query("especialidadId") especialidadId: String? = null,
         @Query("medicoId") medicoId: String? = null
     ): Call<CitasHoyResponse>
-    
+
     @POST("citas/crear")
     fun crearCita(
         @Body request: CrearCitaRequest
     ): Call<CrearCitaResponse>
+
+    @GET("citas/verificar-cambios/{userId}")
+    fun verificarCambiosCitas(
+        @Path("userId") userId: String,
+        @Query("ultimaActualizacion") ultimaActualizacion: Long
+    ): Call<CambiosCitasResponse>
 }
