@@ -14,6 +14,13 @@ const citaSchema = new mongoose.Schema(
       required: [true, 'ID del médico es requerido'],
       description: 'ID del médico',
     },
+    // ✅ NUEVO CAMPO
+    especialidadId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Especialidad',
+      required: [true, 'ID de la especialidad es requerido'],
+      description: 'ID de la especialidad seleccionada para esta cita',
+    },
     fecha: {
       type: Date,
       required: [true, 'La fecha de la cita es requerida'],
@@ -101,5 +108,10 @@ citaSchema.pre('findOneAndUpdate', function (next) {
   this.set({ actualizadoEn: new Date() });
   next();
 });
+
+// ✅ ÍNDICES para mejorar el rendimiento de las consultas
+citaSchema.index({ pacienteId: 1, fecha: 1 });
+citaSchema.index({ medicoId: 1, fecha: 1, hora: 1 });
+citaSchema.index({ especialidadId: 1 });
 
 module.exports = mongoose.model('Cita', citaSchema);

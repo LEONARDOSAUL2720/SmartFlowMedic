@@ -11,7 +11,15 @@ const mongoose = require('mongoose');
 exports.getCitasPaciente = async (req, res) => {
   try {
     const { pacienteId } = req.params;
-    const { estado } = req.query; // Filtro opcional por estado
+    const { estado } = req.query;
+
+    // Validar ObjectId
+    if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'pacienteId no es válido',
+      });
+    }
 
     // Validar que el paciente existe
     const paciente = await Usuario.findById(pacienteId);
@@ -23,28 +31,24 @@ exports.getCitasPaciente = async (req, res) => {
     }
 
     // Construir query
-    const query = { pacienteId };
+    const query = { pacienteId: new mongoose.Types.ObjectId(pacienteId) };
     if (estado) {
       query.estado = estado;
     }
 
-    // Obtener citas con información del médico y especialidades
+    // ✅ Obtener citas con especialidadId
     const citas = await Cita.find(query)
       .populate({
         path: 'medicoId',
-        select: 'nombre apellido foto medicoInfo.especialidades medicoInfo.tarifaConsulta',
-        populate: {
-          path: 'medicoInfo.especialidades',
-          model: 'Especialidad',
-          select: 'nombre descripcion'
-        }
+        select: 'nombre apellido foto medicoInfo.tarifaConsulta'
       })
-      .sort({ fecha: 1, hora: 1 }); // Ordenar por fecha y hora ascendente
+      .populate('especialidadId', 'nombre codigo descripcion')  // ✅ NUEVO
+      .sort({ fecha: 1, hora: 1 });
 
     // Formatear respuesta
     const citasFormateadas = citas.map(cita => {
       const medico = cita.medicoId;
-      const especialidades = medico?.medicoInfo?.especialidades || [];
+      const especialidad = cita.especialidadId;  // ✅ NUEVO
       
       return {
         _id: cita._id,
@@ -60,12 +64,13 @@ exports.getCitasPaciente = async (req, res) => {
           nombre: medico?.nombre,
           apellido: medico?.apellido,
           foto: medico?.foto,
-          especialidades: especialidades.map(esp => ({
-            _id: esp._id,
-            nombre: esp.nombre,
-            descripcion: esp.descripcion
-          })),
           tarifaConsulta: medico?.medicoInfo?.tarifaConsulta
+        },
+        especialidad: {  // ✅ NUEVO
+          _id: especialidad?._id,
+          nombre: especialidad?.nombre,
+          codigo: especialidad?.codigo,
+          descripcion: especialidad?.descripcion
         },
         recetaId: cita.recetaId,
         calificacion: cita.calificacion,
@@ -99,25 +104,49 @@ exports.getCitasProximas = async (req, res) => {
   try {
     const { pacienteId } = req.params;
 
+    console.log('═══════════════════════════════════');
+    console.log('=== GET CITAS PRÓXIMAS ===');
+    console.log('pacienteId recibido:', pacienteId);
+
+    // ✅ Validar ObjectId
+    if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
+      console.error('❌ pacienteId inválido:', pacienteId);
+      return res.status(400).json({
+        success: false,
+        message: 'pacienteId no es válido'
+      });
+    }
+
+    // ✅ Fecha de hoy (inicio del día)
+    const ahora = new Date();
+    ahora.setHours(0, 0, 0, 0);
+    console.log('📅 Buscando citas desde:', ahora);
+
     const citas = await Cita.find({
-      pacienteId,
-      estado: { $in: ['pendiente', 'confirmada'] },
-      fecha: { $gte: new Date() } // Solo citas futuras
+      pacienteId: new mongoose.Types.ObjectId(pacienteId),
+      fecha: { $gte: ahora },
+      estado: { $in: ['pendiente', 'confirmada'] }
     })
       .populate({
         path: 'medicoId',
-        select: 'nombre apellido foto medicoInfo.especialidades',
-        populate: {
-          path: 'medicoInfo.especialidades',
-          model: 'Especialidad',
-          select: 'nombre'
-        }
+        select: 'nombre apellido foto medicoInfo.tarifaConsulta'
       })
+      .populate('especialidadId', 'nombre codigo')  // ✅ NUEVO
       .sort({ fecha: 1, hora: 1 });
 
-    const citasFormateadas = citas.map(cita => {
+    console.log(`✅ Se encontraron ${citas.length} citas próximas`);
+
+    const citasFormateadas = citas.map((cita, index) => {
       const medico = cita.medicoId;
-      const especialidades = medico?.medicoInfo?.especialidades || [];
+      const especialidad = cita.especialidadId;  // ✅ NUEVO
+      
+      console.log(`Cita ${index + 1}:`, {
+        _id: cita._id,
+        fecha: cita.fecha,
+        hora: cita.hora,
+        medico: `${medico?.nombre} ${medico?.apellido}`,
+        especialidad: especialidad?.nombre  // ✅ Ahora es la correcta
+      });
       
       return {
         _id: cita._id,
@@ -126,13 +155,17 @@ exports.getCitasProximas = async (req, res) => {
         estado: cita.estado,
         motivo: cita.motivo,
         monto: cita.monto,
+        pagado: cita.pagado,
+        modoPago: cita.modoPago,
         medico: {
           nombre: `${medico?.nombre} ${medico?.apellido}`,
           foto: medico?.foto,
-          especialidad: especialidades[0]?.nombre || 'Médico General'
+          especialidad: especialidad?.nombre || 'Médico General'  // ✅ Correcta
         }
       };
     });
+
+    console.log('═══════════════════════════════════');
 
     res.status(200).json({
       success: true,
@@ -141,7 +174,9 @@ exports.getCitasProximas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener citas próximas:', error);
+    console.error('❌ Error al obtener citas próximas:', error);
+    console.error('Stack trace:', error.stack);
+    console.log('═══════════════════════════════════');
     res.status(500).json({
       success: false,
       message: 'Error al obtener citas próximas',
@@ -159,25 +194,29 @@ exports.getHistorialCitas = async (req, res) => {
   try {
     const { pacienteId } = req.params;
 
+    // ✅ Validar ObjectId
+    if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'pacienteId no es válido'
+      });
+    }
+
     const citas = await Cita.find({
-      pacienteId,
+      pacienteId: new mongoose.Types.ObjectId(pacienteId),
       estado: 'completada'
     })
       .populate({
         path: 'medicoId',
-        select: 'nombre apellido foto medicoInfo.especialidades',
-        populate: {
-          path: 'medicoInfo.especialidades',
-          model: 'Especialidad',
-          select: 'nombre'
-        }
+        select: 'nombre apellido foto'
       })
+      .populate('especialidadId', 'nombre codigo')  // ✅ NUEVO
       .populate('recetaId')
-      .sort({ fecha: -1 }); // Más recientes primero
+      .sort({ fecha: -1 });
 
     const citasFormateadas = citas.map(cita => {
       const medico = cita.medicoId;
-      const especialidades = medico?.medicoInfo?.especialidades || [];
+      const especialidad = cita.especialidadId;  // ✅ NUEVO
       
       return {
         _id: cita._id,
@@ -187,7 +226,7 @@ exports.getHistorialCitas = async (req, res) => {
         medico: {
           nombre: `${medico?.nombre} ${medico?.apellido}`,
           foto: medico?.foto,
-          especialidad: especialidades[0]?.nombre || 'Médico General'
+          especialidad: especialidad?.nombre || 'Médico General'  // ✅ Correcta
         },
         tieneReceta: !!cita.recetaId,
         calificacion: cita.calificacion
@@ -232,30 +271,35 @@ exports.getCitasHoy = async (req, res) => {
     };
 
     if (medicoId) {
-      query.medicoId = medicoId;
+      if (!mongoose.Types.ObjectId.isValid(medicoId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'medicoId no es válido'
+        });
+      }
+      query.medicoId = new mongoose.Types.ObjectId(medicoId);
     }
 
-    // Obtener citas con populate
-    let citas = await Cita.find(query)
+    // ✅ Si se proporciona especialidadId, agregarlo al query
+    if (especialidadId) {
+      if (!mongoose.Types.ObjectId.isValid(especialidadId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'especialidadId no es válido'
+        });
+      }
+      query.especialidadId = new mongoose.Types.ObjectId(especialidadId);  // ✅ NUEVO
+    }
+
+    // ✅ Obtener citas con populate de especialidadId
+    const citas = await Cita.find(query)
       .populate({
         path: 'medicoId',
-        select: 'nombre apellido foto medicoInfo.especialidades',
-        populate: {
-          path: 'medicoInfo.especialidades',
-          model: 'Especialidad',
-          select: '_id nombre codigo'
-        }
+        select: 'nombre apellido foto'
       })
+      .populate('especialidadId', 'nombre codigo')  // ✅ NUEVO
       .populate('pacienteId', 'nombre apellido foto')
       .sort({ hora: 1 });
-
-    // Filtrar por especialidad si se proporciona
-    if (especialidadId) {
-      citas = citas.filter(cita => {
-        const especialidades = cita.medicoId?.medicoInfo?.especialidades || [];
-        return especialidades.some(esp => esp._id.toString() === especialidadId);
-      });
-    }
 
     // Agrupar por hora
     const citasPorHora = {};
@@ -267,7 +311,7 @@ exports.getCitasHoy = async (req, res) => {
 
       const medico = cita.medicoId;
       const paciente = cita.pacienteId;
-      const especialidades = medico?.medicoInfo?.especialidades || [];
+      const especialidad = cita.especialidadId;  // ✅ NUEVO
 
       citasPorHora[hora].push({
         _id: cita._id,
@@ -278,8 +322,8 @@ exports.getCitasHoy = async (req, res) => {
           _id: medico?._id,
           nombre: `${medico?.nombre} ${medico?.apellido}`,
           foto: medico?.foto,
-          especialidad: especialidades[0]?.nombre || 'General',
-          especialidadCodigo: especialidades[0]?.codigo || 'M'
+          especialidad: especialidad?.nombre || 'General',  // ✅ Correcta
+          especialidadCodigo: especialidad?.codigo || 'M'    // ✅ Correcta
         },
         paciente: {
           _id: paciente?._id,
@@ -321,67 +365,153 @@ exports.getCitasHoy = async (req, res) => {
  */
 exports.crearCita = async (req, res) => {
   try {
-    const { pacienteId, medicoId, fecha, hora, motivo, modoPago } = req.body;
+    console.log('═══════════════════════════════════');
+    console.log('=== CREAR CITA ===');
+    console.log('Body recibido:', JSON.stringify(req.body, null, 2));
 
-    // 1. Validar campos requeridos
-    if (!pacienteId || !medicoId || !fecha || !hora || !motivo || !modoPago) {
+    const { pacienteId, medicoId, especialidadId, fecha, hora, motivo, modoPago } = req.body;  // ✅ Agregar especialidadId
+
+    // ✅ 1. Validar campos requeridos
+    if (!pacienteId || !medicoId || !especialidadId || !fecha || !hora || !motivo || !modoPago) {  // ✅ Incluir especialidadId
+      console.error('❌ Faltan campos requeridos');
       return res.status(400).json({
         success: false,
-        message: 'Todos los campos son requeridos: pacienteId, medicoId, fecha, hora, motivo, modoPago'
+        message: 'Todos los campos son requeridos: pacienteId, medicoId, especialidadId, fecha, hora, motivo, modoPago'
       });
     }
 
-    // 2. Validar que el paciente existe
+    // ✅ 2. Validar ObjectIds
+    if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
+      console.error('❌ pacienteId inválido:', pacienteId);
+      return res.status(400).json({
+        success: false,
+        message: 'pacienteId no es válido'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(medicoId)) {
+      console.error('❌ medicoId inválido:', medicoId);
+      return res.status(400).json({
+        success: false,
+        message: 'medicoId no es válido'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(especialidadId)) {  // ✅ NUEVO
+      console.error('❌ especialidadId inválido:', especialidadId);
+      return res.status(400).json({
+        success: false,
+        message: 'especialidadId no es válido'
+      });
+    }
+
+    // ✅ 3. Validar que el paciente existe
     const paciente = await Usuario.findById(pacienteId);
     if (!paciente || paciente.rol !== 'paciente') {
+      console.error('❌ Paciente no encontrado o rol inválido');
       return res.status(404).json({
         success: false,
         message: 'Paciente no encontrado o rol inválido'
       });
     }
 
-    // 3. Validar que el médico existe y obtener su info
+    // ✅ 4. Validar que el médico existe y obtener su info
     const medico = await Usuario.findById(medicoId).populate('medicoInfo.especialidades');
     if (!medico || medico.rol !== 'medico') {
+      console.error('❌ Médico no encontrado o rol inválido');
       return res.status(404).json({
         success: false,
         message: 'Médico no encontrado o rol inválido'
       });
     }
 
-    // 4. Validar que el médico tenga tarifaConsulta
-    if (!medico.medicoInfo?.tarifaConsulta) {
-      return res.status(400).json({
+    // ✅ 5. Validar que la especialidad exista
+    const especialidad = await Especialidad.findById(especialidadId);
+    if (!especialidad) {
+      console.error('❌ Especialidad no encontrada');
+      return res.status(404).json({
         success: false,
-        message: 'El médico no tiene tarifa de consulta configurada'
+        message: 'Especialidad no encontrada'
       });
     }
 
-    // 5. Validar fecha (debe ser hoy o futura)
-    const fechaCita = new Date(fecha);
+    console.log('✅ Especialidad encontrada:', especialidad.nombre);
+
+    // ✅ 6. Validar que el médico tenga esa especialidad
+    const tieneEspecialidad = medico.medicoInfo?.especialidades?.some(
+      esp => esp._id.toString() === especialidadId
+    );
+    
+    if (!tieneEspecialidad) {
+      console.error('❌ El médico no tiene esa especialidad');
+      console.error('Especialidades del médico:', medico.medicoInfo?.especialidades?.map(e => e.nombre));
+      return res.status(400).json({
+        success: false,
+        message: `El médico no ofrece la especialidad ${especialidad.nombre}`
+      });
+    }
+
+    console.log('✅ El médico SÍ tiene la especialidad');
+
+    // ✅ 7. Validar que el médico tenga tarifaConsulta
+    const tarifaConsulta = medico.medicoInfo?.tarifaConsulta || 700;
+    console.log('💰 Tarifa del médico:', tarifaConsulta);
+
+    // ✅ 8. Convertir fecha de "YYYY-MM-DD" a Date
+    let fechaCita;
+    try {
+      if (typeof fecha === 'string') {
+        const [year, month, day] = fecha.split('-').map(Number);
+        fechaCita = new Date(year, month - 1, day);
+        fechaCita.setHours(0, 0, 0, 0);
+      } else {
+        fechaCita = new Date(fecha);
+        fechaCita.setHours(0, 0, 0, 0);
+      }
+
+      console.log('📅 Fecha original:', fecha);
+      console.log('📅 Fecha convertida:', fechaCita);
+
+      if (isNaN(fechaCita.getTime())) {
+        throw new Error('Fecha inválida');
+      }
+    } catch (error) {
+      console.error('❌ Error al convertir fecha:', error);
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de fecha inválido. Use YYYY-MM-DD'
+      });
+    }
+
+    // ✅ 9. Validar fecha (debe ser hoy o futura)
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     
     if (fechaCita < hoy) {
+      console.error('❌ Fecha anterior a hoy');
       return res.status(400).json({
         success: false,
         message: 'La fecha de la cita no puede ser anterior a hoy'
       });
     }
 
-    // 6. Validar que el médico trabaje ese día y hora
+    // ✅ 10. Validar que el médico trabaje ese día y hora
     const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][fechaCita.getDay()];
     const horariosDisponibles = medico.medicoInfo?.horariosDisponibles || [];
     
+    console.log('📆 Día de la semana:', diaSemana);
+    console.log('⏰ Horarios disponibles del médico:', horariosDisponibles);
+
     const trabajaEseDia = horariosDisponibles.find(h => h.dia === diaSemana);
     if (!trabajaEseDia) {
+      console.error(`❌ Médico no trabaja los ${diaSemana}`);
       return res.status(400).json({
         success: false,
         message: `El médico no trabaja los días ${diaSemana}`
       });
     }
 
-    // 7. Validar que la hora esté dentro del horario del médico
+    // ✅ 11. Validar que la hora esté dentro del horario del médico
     const [horaInicio, minutoInicio] = trabajaEseDia.horaInicio.split(':').map(Number);
     const [horaFin, minutoFin] = trabajaEseDia.horaFin.split(':').map(Number);
     const [horaCita, minutoCita] = hora.split(':').map(Number);
@@ -391,57 +521,67 @@ exports.crearCita = async (req, res) => {
     const minutosCita = horaCita * 60 + minutoCita;
     
     if (minutosCita < minutosInicio || minutosCita >= minutosFin) {
+      console.error('❌ Hora fuera del horario del médico');
       return res.status(400).json({
         success: false,
         message: `El médico trabaja de ${trabajaEseDia.horaInicio} a ${trabajaEseDia.horaFin} los ${diaSemana}`
       });
     }
 
-    // 8. Verificar que no exista otra cita en ese horario
+    // ✅ 12. Verificar que no exista otra cita en ese horario
     const citaExistente = await Cita.findOne({
-      medicoId,
+      medicoId: new mongoose.Types.ObjectId(medicoId),
       fecha: fechaCita,
       hora,
       estado: { $in: ['pendiente', 'confirmada'] }
     });
 
     if (citaExistente) {
+      console.error('❌ Ya existe una cita en ese horario');
       return res.status(409).json({
         success: false,
         message: 'Ya existe una cita en ese horario. Por favor selecciona otra hora.'
       });
     }
 
-    // 9. Crear la cita
-    const nuevaCita = await Cita.create({
-      pacienteId,
-      medicoId,
+    // ✅ 13. Crear la cita CON especialidadId
+    const ahora = new Date();
+    const nuevaCita = new Cita({
+      pacienteId: new mongoose.Types.ObjectId(pacienteId),
+      medicoId: new mongoose.Types.ObjectId(medicoId),
+      especialidadId: new mongoose.Types.ObjectId(especialidadId),  // ✅ NUEVO
       fecha: fechaCita,
-      hora,
+      hora: hora,
       estado: 'pendiente',
-      motivo,
-      modoPago,
-      pagado: false,
-      monto: medico.medicoInfo.tarifaConsulta
+      motivo: motivo,
+      modoPago: modoPago,
+      pagado: modoPago === 'online' ? true : false,
+      monto: tarifaConsulta,
+      creadoEn: ahora,
+      actualizadoEn: ahora
     });
 
-    // 10. Populate para devolver datos completos
-    const citaCompleta = await Cita.findById(nuevaCita._id)
+    console.log('💾 Cita a guardar:', JSON.stringify(nuevaCita, null, 2));
+
+    // ✅ 14. Guardar en la base de datos
+    const citaGuardada = await nuevaCita.save();
+    console.log('✅ Cita guardada exitosamente con ID:', citaGuardada._id);
+
+    // ✅ 15. Populate para devolver datos completos
+    const citaCompleta = await Cita.findById(citaGuardada._id)
       .populate({
         path: 'medicoId',
-        select: 'nombre apellido foto medicoInfo.especialidades medicoInfo.tarifaConsulta',
-        populate: {
-          path: 'medicoInfo.especialidades',
-          model: 'Especialidad',
-          select: 'nombre codigo descripcion'
-        }
+        select: 'nombre apellido foto medicoInfo.tarifaConsulta'
       })
+      .populate('especialidadId', 'nombre codigo descripcion')  // ✅ NUEVO
       .populate('pacienteId', 'nombre apellido email foto');
 
-    // 11. Formatear respuesta
+    console.log('✅ Cita completa con populate:', citaCompleta);
+
+    // ✅ 16. Formatear respuesta
     const medico_data = citaCompleta.medicoId;
     const paciente_data = citaCompleta.pacienteId;
-    const especialidades = medico_data?.medicoInfo?.especialidades || [];
+    const especialidad_data = citaCompleta.especialidadId;  // ✅ NUEVO
 
     const respuesta = {
       _id: citaCompleta._id,
@@ -457,13 +597,13 @@ exports.crearCita = async (req, res) => {
         nombre: medico_data?.nombre,
         apellido: medico_data?.apellido,
         foto: medico_data?.foto,
-        especialidades: especialidades.map(esp => ({
-          _id: esp._id,
-          nombre: esp.nombre,
-          codigo: esp.codigo,
-          descripcion: esp.descripcion
-        })),
         tarifaConsulta: medico_data?.medicoInfo?.tarifaConsulta
+      },
+      especialidad: {  // ✅ NUEVO
+        _id: especialidad_data?._id,
+        nombre: especialidad_data?.nombre,
+        codigo: especialidad_data?.codigo,
+        descripcion: especialidad_data?.descripcion
       },
       paciente: {
         _id: paciente_data?._id,
@@ -475,6 +615,9 @@ exports.crearCita = async (req, res) => {
       creadoEn: citaCompleta.creadoEn
     };
 
+    console.log('✅ Respuesta final:', JSON.stringify(respuesta, null, 2));
+    console.log('═══════════════════════════════════');
+
     res.status(201).json({
       success: true,
       message: 'Cita creada exitosamente',
@@ -482,7 +625,12 @@ exports.crearCita = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al crear cita:', error);
+    console.error('═══════════════════════════════════');
+    console.error('❌ ERROR al crear cita:', error);
+    console.error('Mensaje:', error.message);
+    console.error('Stack trace:', error.stack);
+    console.error('═══════════════════════════════════');
+    
     res.status(500).json({
       success: false,
       message: 'Error al crear la cita',
@@ -501,7 +649,10 @@ exports.verificarCambiosCitas = async (req, res) => {
     const { userId } = req.params;
     const { ultimaActualizacion } = req.query;
 
-    // Validar parámetros
+    console.log('=== VERIFICAR CAMBIOS ===');
+    console.log('userId:', userId);
+    console.log('ultimaActualizacion:', ultimaActualizacion);
+
     if (!userId || !ultimaActualizacion) {
       return res.status(400).json({
         success: false,
@@ -509,7 +660,6 @@ exports.verificarCambiosCitas = async (req, res) => {
       });
     }
 
-    // ✅ Validar que userId sea un ObjectId válido
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
@@ -517,10 +667,8 @@ exports.verificarCambiosCitas = async (req, res) => {
       });
     }
 
-    // Convertir timestamp a fecha
     const ultimaActualizacionDate = new Date(parseInt(ultimaActualizacion));
 
-    // Validar que la fecha sea válida
     if (isNaN(ultimaActualizacionDate.getTime())) {
       return res.status(400).json({
         success: false,
@@ -528,14 +676,15 @@ exports.verificarCambiosCitas = async (req, res) => {
       });
     }
 
-    // Buscar citas que se crearon o actualizaron después de la última verificación
     const citasNuevas = await Cita.find({
-      pacienteId: userId,
+      pacienteId: new mongoose.Types.ObjectId(userId),
       $or: [
-        { createdAt: { $gt: ultimaActualizacionDate } },
-        { updatedAt: { $gt: ultimaActualizacionDate } }
+        { creadoEn: { $gt: ultimaActualizacionDate } },
+        { actualizadoEn: { $gt: ultimaActualizacionDate } }
       ]
     });
+
+    console.log(`📊 Citas nuevas/modificadas: ${citasNuevas.length}`);
 
     res.json({
       success: true,
@@ -547,11 +696,11 @@ exports.verificarCambiosCitas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al verificar cambios en citas:', error);
+    console.error('❌ Error al verificar cambios en citas:', error);
     res.status(500).json({
       success: false,
       message: 'Error al verificar cambios',
       error: error.message
     });
   }
-}; 
+};
