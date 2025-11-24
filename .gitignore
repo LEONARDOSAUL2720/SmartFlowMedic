@@ -6,7 +6,7 @@ package-lock.json
 .env
 
 # Ignorar proyecto de android studio completo 
-SmartFlowAndorid/
+SmartFlowAndroid/
 *.iml
 .idea/
 .gradle/

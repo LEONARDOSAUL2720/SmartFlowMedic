@@ -323,17 +323,29 @@ const getHorariosDisponibles = async (req, res) => {
   try {
     const { especialidadId, medicoId } = req.query;
 
+    console.log('═══════════════════════════════════');
+    console.log('=== GET HORARIOS DISPONIBLES HOY ===');
+    console.log('especialidadId:', especialidadId || 'todos');
+    console.log('medicoId:', medicoId || 'todos');
+
     const hoy = new Date();
+    const diaHoy = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][hoy.getDay()];
     const inicioDelDia = new Date(hoy);
     inicioDelDia.setHours(0, 0, 0, 0);
     
     const finDelDia = new Date(hoy);
     finDelDia.setHours(23, 59, 59, 999);
 
-    // Obtener médicos filtrados
+    console.log('📅 Día:', diaHoy);
+    console.log('📅 Fecha:', inicioDelDia);
+
+    // ✅ Construir query de médicos
     const queryMedicos = {
       rol: 'medico',
-      activo: true
+      activo: true,
+      'medicoInfo.horariosDisponibles': {
+        $elemMatch: { dia: diaHoy }
+      }
     };
 
     if (especialidadId) {
@@ -344,71 +356,93 @@ const getHorariosDisponibles = async (req, res) => {
       queryMedicos._id = medicoId;
     }
 
+    // ✅ Obtener médicos que trabajan HOY
     const medicos = await Usuario.find(queryMedicos)
       .populate('medicoInfo.especialidades', 'nombre codigo')
       .select('nombre apellido foto medicoInfo');
 
-    // Generar horarios disponibles para cada médico
-    const horariosDisponibles = await Promise.all(
-      medicos.map(async (medico) => {
-        const horarios = medico.medicoInfo?.horariosDisponibles || [];
+    console.log(`✅ Se encontraron ${medicos.length} médicos que trabajan hoy`);
+
+    if (medicos.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No hay médicos disponibles hoy',
+        data: []
+      });
+    }
+
+    // ✅ Obtener todas las citas de HOY para calcular disponibilidad
+    const citasHoy = await require('../../../models/Cita').find({
+      fecha: { $gte: inicioDelDia, $lte: finDelDia },
+      estado: { $in: ['pendiente', 'confirmada'] }
+    }).select('medicoId hora');
+
+    // Crear mapa de horas ocupadas por médico
+    const horasOcupadasPorMedico = {};
+    citasHoy.forEach(cita => {
+      const medicoIdStr = cita.medicoId.toString();
+      if (!horasOcupadasPorMedico[medicoIdStr]) {
+        horasOcupadasPorMedico[medicoIdStr] = new Set();
+      }
+      horasOcupadasPorMedico[medicoIdStr].add(cita.hora);
+    });
+
+    console.log('📊 Médicos con citas ocupadas:', Object.keys(horasOcupadasPorMedico).length);
+
+    // ✅ Generar horarios disponibles para cada médico
+    const horariosDisponibles = [];
+
+    medicos.forEach(medico => {
+      const horarios = medico.medicoInfo?.horariosDisponibles || [];
+      
+      // Filtrar horarios de hoy
+      const horariosHoy = horarios.filter(h => h.dia === diaHoy);
+
+      horariosHoy.forEach(horario => {
+        // Generar slots de 30 minutos
+        const slots = generarSlots(horario.horaInicio, horario.horaFin, 30);
         
-        // Filtrar horarios de hoy
-        const diaHoy = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][hoy.getDay()];
-        const horariosHoy = horarios.filter(h => h.dia === diaHoy);
+        // Filtrar slots ya ocupados
+        const medicoIdStr = medico._id.toString();
+        const horasOcupadas = horasOcupadasPorMedico[medicoIdStr] || new Set();
+        const slotsDisponibles = slots.filter(slot => !horasOcupadas.has(slot));
 
-        // Para cada horario, calcular turnos en espera
-        const slotsHorarios = await Promise.all(
-          horariosHoy.map(async (horario) => {
-            const horaInicio = parseInt(horario.horaInicio.split(':')[0]);
-            const horaFin = parseInt(horario.horaFin.split(':')[0]);
+        if (slotsDisponibles.length > 0) {
+          const especialidades = medico.medicoInfo?.especialidades || [];
 
-            // Contar turnos en ese rango de horas
-            const turnosEnRango = await Turno.countDocuments({
-              medico: medico._id,
-              fecha: { $gte: inicioDelDia, $lte: finDelDia },
-              estado: { $in: ['en_espera', 'llamando', 'atendiendo'] }
-            });
-
-            const capacidadMaxima = (horaFin - horaInicio) * 4; // 4 turnos por hora
-            const disponible = turnosEnRango < capacidadMaxima;
-
-            return {
+          horariosDisponibles.push({
+            medico: {
+              _id: medico._id,
+              nombre: `${medico.nombre} ${medico.apellido}`,
+              foto: medico.foto,
+              especialidades: especialidades.map(esp => ({
+                _id: esp._id,
+                nombre: esp.nombre,
+                codigo: esp.codigo
+              }))
+            },
+            horarioTrabajo: {
               horaInicio: horario.horaInicio,
-              horaFin: horario.horaFin,
-              turnosEnEspera: turnosEnRango,
-              capacidadMaxima,
-              disponible,
-              tiempoEstimadoMin: turnosEnRango * 15
-            };
-          })
-        );
+              horaFin: horario.horaFin
+            },
+            horariosDisponibles: slotsDisponibles,
+            cantidadDisponibles: slotsDisponibles.length
+          });
+        }
+      });
+    });
 
-        const especialidades = medico.medicoInfo?.especialidades || [];
-
-        return {
-          medico: {
-            _id: medico._id,
-            nombre: `${medico.nombre} ${medico.apellido}`,
-            foto: medico.foto,
-            especialidades: especialidades.map(esp => ({
-              _id: esp._id,
-              nombre: esp.nombre,
-              codigo: esp.codigo
-            }))
-          },
-          horarios: slotsHorarios
-        };
-      })
-    );
+    console.log(`✅ ${horariosDisponibles.length} médicos con horarios disponibles`);
+    console.log('═══════════════════════════════════');
 
     res.json({
       success: true,
       fecha: hoy,
-      data: horariosDisponibles.filter(h => h.horarios.length > 0)
+      diaSemana: diaHoy,
+      data: horariosDisponibles
     });
   } catch (error) {
-    console.error('Error en getHorariosDisponibles:', error);
+    console.error('❌ Error en getHorariosDisponibles:', error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener horarios disponibles',
@@ -416,6 +450,26 @@ const getHorariosDisponibles = async (req, res) => {
     });
   }
 };
+
+// ✅ Función auxiliar para generar slots de tiempo
+function generarSlots(horaInicio, horaFin, intervaloMinutos) {
+  const slots = [];
+  const [horaInicioH, horaInicioM] = horaInicio.split(':').map(Number);
+  const [horaFinH, horaFinM] = horaFin.split(':').map(Number);
+
+  let minutoActual = horaInicioH * 60 + horaInicioM;
+  const minutoFin = horaFinH * 60 + horaFinM;
+
+  while (minutoActual < minutoFin) {
+    const horas = Math.floor(minutoActual / 60);
+    const minutos = minutoActual % 60;
+    const horaFormateada = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+    slots.push(horaFormateada);
+    minutoActual += intervaloMinutos;
+  }
+
+  return slots;
+}
 
 module.exports = {
   getTurnosDelDia,
