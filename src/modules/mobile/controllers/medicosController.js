@@ -57,3 +57,36 @@ exports.getMedicos = async (req, res) => {
     });
   }
 };
+
+exports.getMedicoById = async (req, res) => {
+  try {
+    const { medicoId } = req.params;
+
+    const medico = await Usuario.findOne({
+      _id: medicoId,
+      rol: 'medico',
+      activo: true
+    })
+      .populate('medicoInfo.especialidades', 'nombre codigo descripcion')
+      .select('_id nombre apellido email telefono foto medicoInfo');
+
+    if (!medico) {
+      return res.status(404).json({
+        success: false,
+        message: 'Médico no encontrado'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: medico
+    });
+  } catch (error) {
+    console.error('Error al obtener médico:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener información del médico',
+      error: error.message
+    });
+  }
+};

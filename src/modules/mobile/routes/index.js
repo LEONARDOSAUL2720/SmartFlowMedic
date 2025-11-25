@@ -7,6 +7,8 @@ const turnosRoutes = require('./turnosRoutes');
 const especialidadesRoutes = require('./especialidadesRoutes');
 const medicosRoutes = require('./medicosRoutes');
 const disponibilidadRoutes = require('./medicosDisponibilidad');
+const recetasRoutes = require('./recetas');
+const calificacionesRoutes = require('./calificaciones'); 
 
 // Rutas de autenticación móvil
 router.use('/auth', authRoutes);
@@ -24,6 +26,10 @@ router.use('/especialidades', especialidadesRoutes);
 router.use('/medicos', medicosRoutes);
 // Rutas de disponibilidad de médicos
 router.use('/medicos', disponibilidadRoutes);
+// Ruta para mostrar las recetas en vista del paciente 
+router.use('/recetas', recetasRoutes);
+// Ruta calificaciones de médicos
+router.use('/calificaciones', calificacionesRoutes);
 
 // Ruta de prueba
 router.get('/health', (req, res) => {
