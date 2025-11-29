@@ -704,3 +704,75 @@ exports.verificarCambiosCitas = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Obtener estadísticas de citas de un paciente
+ * @route   GET /api/mobile/citas/paciente/:pacienteId/estadisticas
+ * @access  Private
+ */
+exports.getEstadisticasPaciente = async (req, res) => {
+  try {
+    const { pacienteId } = req.params;
+
+    console.log('═══════════════════════════════════');
+    console.log('=== GET ESTADÍSTICAS PACIENTE ===');
+    console.log('pacienteId:', pacienteId);
+
+    // Validar ObjectId
+    if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
+      console.error('❌ pacienteId inválido');
+      return res.status(400).json({
+        success: false,
+        message: 'pacienteId no es válido'
+      });
+    }
+
+    // Obtener paciente para saber la fecha de registro
+    const paciente = await Usuario.findById(pacienteId);
+    if (!paciente) {
+      console.error('❌ Paciente no encontrado');
+      return res.status(404).json({
+        success: false,
+        message: 'Paciente no encontrado'
+      });
+    }
+
+    // Contar citas completadas
+    const citasCompletadas = await Cita.countDocuments({
+      pacienteId: new mongoose.Types.ObjectId(pacienteId),
+      estado: 'completada'
+    });
+
+    // Contar todas las citas (para estadística adicional)
+    const totalCitas = await Cita.countDocuments({
+      pacienteId: new mongoose.Types.ObjectId(pacienteId)
+    });
+
+    // Obtener año de registro
+    const añoRegistro = paciente.fechaRegistro.getFullYear();
+
+    console.log(`✅ Citas completadas: ${citasCompletadas}`);
+    console.log(`📊 Total citas: ${totalCitas}`);
+    console.log(`📅 Miembro desde: ${añoRegistro}`);
+    console.log('═══════════════════════════════════');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        citasCompletadas: citasCompletadas,
+        totalCitas: totalCitas,
+        miembroDesde: añoRegistro,
+        estadoActivo: paciente.activo ? 'Activo' : 'Inactivo'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error al obtener estadísticas:', error);
+    console.log('═══════════════════════════════════');
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas del paciente',
+      error: error.message
+    });
+  }
+};

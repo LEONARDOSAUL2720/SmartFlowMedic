@@ -6,6 +6,7 @@ const citasController = require('../controllers/citasController');
 router.get('/paciente/:pacienteId', citasController.getCitasPaciente);
 router.get('/paciente/:pacienteId/proximas', citasController.getCitasProximas);
 router.get('/paciente/:pacienteId/historial', citasController.getHistorialCitas);
+router.get('/paciente/:pacienteId/estadisticas', citasController.getEstadisticasPaciente);
 
 // Nueva ruta para fila virtual de citas HOY
 router.get('/hoy', citasController.getCitasHoy);
