@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const medicosController = require('../controllers/medicosController');
 
+// GET - Obtener disponibilidad REAL de un médico (debe ir ANTES de /:medicoId)
+router.get('/:medicoId/disponibilidad', medicosController.getDisponibilidad);
+
 // GET - Obtener médico por ID (debe ir ANTES de /especialidad para evitar conflictos)
 router.get('/:medicoId', medicosController.getMedicoById);
 
