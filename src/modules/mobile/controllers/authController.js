@@ -431,45 +431,83 @@ exports.getProfile = async (req, res) => {
 // @access  Private
 exports.updateProfile = async (req, res) => {
   try {
-    const fieldsToUpdate = {
-      nombre: req.body.nombre,
-      apellido: req.body.apellido,
-      telefono: req.body.telefono,
-      foto: req.body.foto,
-    };
+    const { nombre, apellido, email, telefono, password, foto } = req.body;
 
-    // Remover campos undefined
-    Object.keys(fieldsToUpdate).forEach(key => 
-      fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
-    );
+    // Buscar el usuario actual
+    const user = await Usuario.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado',
+      });
+    }
+
+    // Validar email si se proporciona y es diferente al actual
+    if (email && email !== user.email) {
+      // Verificar que el nuevo email no esté en uso
+      const emailExists = await Usuario.findOne({ email, _id: { $ne: req.user.id } });
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Este email ya está registrado',
+        });
+      }
+      user.email = email;
+    }
+
+    // Validar teléfono si se proporciona
+    if (telefono && !/^\d{10}$/.test(telefono)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El teléfono debe tener exactamente 10 dígitos',
+      });
+    }
+
+    // Actualizar campos básicos
+    if (nombre) user.nombre = nombre;
+    if (apellido !== undefined) user.apellido = apellido; // Permitir string vacío
+    if (telefono) user.telefono = telefono;
+    if (foto !== undefined) user.foto = foto;
+
+    // Actualizar contraseña solo si se proporciona
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'La contraseña debe tener al menos 6 caracteres',
+        });
+      }
+      user.password = password; // El pre-save hook del modelo la encriptará
+    }
 
     // Si es médico y envía medicoInfo, actualizar
     if (req.user.rol === 'medico' && req.body.medicoInfo) {
-      const user = await Usuario.findById(req.user.id);
-      
-      // Actualizar campos de medicoInfo
       if (user.medicoInfo) {
         Object.assign(user.medicoInfo, req.body.medicoInfo);
-        Object.assign(user, fieldsToUpdate);
-        await user.save();
-        
-        return res.json({
-          success: true,
-          data: user,
-        });
       }
     }
 
-    const user = await Usuario.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
-      new: true,
-      runValidators: true,
-    });
+    await user.save();
 
     res.json({
       success: true,
-      data: user,
+      message: 'Perfil actualizado correctamente',
+      user: {
+        id: user._id,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.email,
+        telefono: user.telefono,
+        rol: user.rol,
+        foto: user.foto,
+        ...(user.rol === 'medico' && user.medicoInfo && { 
+          medicoInfo: user.medicoInfo
+        }),
+      },
     });
   } catch (error) {
+    console.error('Error al actualizar perfil:', error);
     res.status(500).json({
       success: false,
       message: 'Error al actualizar perfil',
